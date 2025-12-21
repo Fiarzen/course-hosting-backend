@@ -2,30 +2,53 @@ package com.jeremy.courses;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 
-@Component // This tells Spring to find this class and run it automatically
+@Component
 public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
+    private final CourseRepository courseRepository;
 
-    // Spring "Injects" your repository here automatically
-    public DataSeeder(UserRepository userRepository) {
+    // 1. Inject BOTH repositories
+    public DataSeeder(UserRepository userRepository, CourseRepository courseRepository) {
         this.userRepository = userRepository;
+        this.courseRepository = courseRepository;
     }
 
     @Override
     public void run(String... args) throws Exception {
-        // Only seed if the database is empty
+        // Only run if the database is empty of users
         if (userRepository.count() == 0) {
-            System.out.println("🌱 Seeding database with initial users...");
+            System.out.println("🌱 Seeding database...");
 
+            // --- Create Users ---
             User admin = new User("admin@example.com", "password123", "CREATOR");
-            User student = new User("student@example.com", "pass321", "STUDENT");
+            admin.setName("Admin User");
 
+            User student = new User("student@example.com", "pass321", "STUDENT");
+            student.setName("Jeremy Student");
+
+            // Save users first! We need them to exist before they can author a course.
             userRepository.saveAll(List.of(admin, student));
 
-            System.out.println("✅ Seeding complete! Added " + userRepository.count() + " users.");
+            // --- Create Courses ---
+            // Notice we pass 'admin' as the 3rd argument (the author)
+            Course javaCourse = new Course(
+                    "Java for Beginners",
+                    "Learn the basics of Java from scratch.",
+                    admin);
+
+            Course springCourse = new Course(
+                    "Spring Boot Masterclass",
+                    "Build web APIs with Spring Boot.",
+                    admin);
+
+            // Save courses
+            courseRepository.saveAll(List.of(javaCourse, springCourse));
+
+            System.out.println("✅ Seeding complete! Users and Courses created.");
         } else {
             System.out.println("⚠️ Database already has data, skipping seed.");
         }
