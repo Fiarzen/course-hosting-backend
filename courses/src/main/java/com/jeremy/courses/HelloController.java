@@ -10,9 +10,4 @@ public class HelloController {
     public String hello() {
         return "Hello Spring Boot!";
     }
-
-    @GetMapping("/course")
-    public Course getCourse() {
-        return new Course("Java Backend", "Learn Spring Boot from scratch");
-    }
 }
