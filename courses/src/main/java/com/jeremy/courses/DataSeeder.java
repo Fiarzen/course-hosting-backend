@@ -1,6 +1,7 @@
 package com.jeremy.courses;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import java.util.List;
 
@@ -9,15 +10,15 @@ public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
-    private final LessonRepository lessonRepository; // <--- 1. Add this
+    private final LessonRepository lessonRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // 2. Inject it in the constructor
-    public DataSeeder(UserRepository userRepository,
-            CourseRepository courseRepository,
-            LessonRepository lessonRepository) {
-        this.userRepository = userRepository;
-        this.courseRepository = courseRepository;
-        this.lessonRepository = lessonRepository;
+    public DataSeeder(UserRepository u, CourseRepository c, LessonRepository l, PasswordEncoder pe) {
+        this.userRepository = u;
+        this.courseRepository = c;
+        this.lessonRepository = l;
+        this.passwordEncoder = pe;
     }
 
     @Override
@@ -25,10 +26,10 @@ public class DataSeeder implements CommandLineRunner {
         if (userRepository.count() == 0) {
             System.out.println("🌱 Seeding database...");
 
-            User admin = new User("admin@example.com", "password123", "CREATOR");
+            User admin = new User("admin@example.com", passwordEncoder.encode("pass123"), "CREATOR");
             admin.setName("Admin User");
 
-            User student = new User("student@example.com", "pass321", "STUDENT");
+            User student = new User("student@example.com", passwordEncoder.encode("pass321"), "STUDENT");
             student.setName("Jeremy Student");
 
             userRepository.saveAll(List.of(admin, student));

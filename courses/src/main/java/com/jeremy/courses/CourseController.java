@@ -9,8 +9,8 @@ public class CourseController {
 
     private final CourseRepository courseRepository;
 
-    // Inject the repository
-    public CourseController(CourseRepository courseRepository) {
+    // 2. Update Constructor to include LessonRepository
+    public CourseController(CourseRepository courseRepository, LessonRepository lessonRepository) {
         this.courseRepository = courseRepository;
     }
 
@@ -19,4 +19,5 @@ public class CourseController {
     public List<Course> getAllCourses() {
         return courseRepository.findAll();
     }
+
 }
