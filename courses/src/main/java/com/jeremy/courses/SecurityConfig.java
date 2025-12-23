@@ -23,8 +23,12 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/courses",
-                                "/v3/api-docs/**")
+                        .requestMatchers("/courses", // Your Public Endpoint
+                                "/v3/api-docs", // Exact match for the JSON
+                                "/v3/api-docs/**", // Match for sub-groups (if you have them)
+                                "/swagger-ui/**", // The UI static resources (CSS/JS)
+                                "/swagger-ui.html" // The UI index page
+                        )
                         .permitAll() // Keep the list public
                         .anyRequest().authenticated() // Everything else requires login
                 )
