@@ -160,7 +160,7 @@ resource "aws_db_subnet_group" "db_subnets" {
 resource "aws_db_instance" "postgres" {
   identifier        = "course-db"
   engine            = "postgres"
-  engine_version    = "16.1"
+  # Let AWS use the default supported engine version for this region
   instance_class    = var.db_instance_class
   allocated_storage = 20
 
@@ -209,19 +209,4 @@ resource "aws_instance" "app" {
     Project = "course-hosting-backend"
     Env     = var.environment
   }
-}
-
-output "app_public_ip" {
-  description = "Public IP of the application EC2 instance"
-  value       = aws_instance.app.public_ip
-}
-
-output "rds_endpoint" {
-  description = "RDS endpoint for PostgreSQL"
-  value       = aws_db_instance.postgres.address
-}
-
-output "s3_bucket_name" {
-  description = "S3 bucket for lesson files"
-  value       = aws_s3_bucket.lesson_files.bucket
 }
