@@ -1,0 +1,229 @@
+openapi: 3.0.3
+info:
+  title: Courses API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /:
+    get:
+      summary: Hello endpoint
+      operationId: getRoot
+      tags: [Misc]
+      security:
+        - basicAuth: []
+      responses:
+        '200':
+          description: Greeting message
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /users:
+    get:
+      summary: List all users
+      operationId: listUsers
+      tags: [Users]
+      security:
+        - basicAuth: []
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /courses:
+    get:
+      summary: List all courses
+      operationId: listCourses
+      tags: [Courses]
+      # /courses is permitted for unauthenticated access per SecurityConfig
+      security: []
+      responses:
+        '200':
+          description: A list of courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Course'
+    post:
+      summary: Create a course
+      operationId: createCourse
+      tags: [Courses]
+      description: Requires authenticated user with role CREATOR.
+      security:
+        - basicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Course'
+      responses:
+        '200':
+          description: The created course
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+
+  /lessons:
+    get:
+      summary: List all lessons
+      operationId: listLessons
+      tags: [Lessons]
+      security:
+        - basicAuth: []
+      responses:
+        '200':
+          description: A list of lessons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Lesson'
+    post:
+      summary: Create a lesson with optional uploads
+      operationId: createLesson
+      tags: [Lessons]
+      description: |
+        Requires authenticated user with role CREATOR.
+        Expects multipart/form-data with fields:
+        - title (string, required)
+        - content (string, required)
+        - courseId (int64, required)
+        - video (binary file, optional)
+        - pdf (binary file, optional)
+      security:
+        - basicAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+                - courseId
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                courseId:
+                  type: integer
+                  format: int64
+                video:
+                  type: string
+                  format: binary
+                  description: Optional video file to upload.
+                pdf:
+                  type: string
+                  format: binary
+                  description: Optional PDF file to upload.
+      responses:
+        '200':
+          description: The created lesson
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+
+  /lessons/course/{courseId}:
+    get:
+      summary: List lessons for a given course
+      operationId: listLessonsByCourse
+      tags: [Lessons]
+      security:
+        - basicAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: A list of lessons for the specified course
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Lesson'
+        '404':
+          description: Course not found
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+      required:
+        - id
+        - email
+
+    Course:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        author:
+          $ref: '#/components/schemas/User'
+      required:
+        - id
+        - title
+
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        content:
+          type: string
+        videoUrl:
+          type: string
+          nullable: true
+        pdfUrl:
+          type: string
+          nullable: true
+        course:
+          $ref: '#/components/schemas/Course'
+      required:
+        - id
+        - title
+        - content

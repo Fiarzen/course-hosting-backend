@@ -23,7 +23,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/courses").permitAll() // Keep the list public
+                        .requestMatchers("/courses",
+                                "/v3/api-docs/**")
+                        .permitAll() // Keep the list public
                         .anyRequest().authenticated() // Everything else requires login
                 )
                 .httpBasic(withDefaults());
