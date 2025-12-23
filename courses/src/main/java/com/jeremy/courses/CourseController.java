@@ -1,23 +1,29 @@
 package com.jeremy.courses;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequestMapping("/courses")
 public class CourseController {
 
     private final CourseRepository courseRepository;
 
-    // 2. Update Constructor to include LessonRepository
-    public CourseController(CourseRepository courseRepository, LessonRepository lessonRepository) {
+    public CourseController(CourseRepository courseRepository) {
         this.courseRepository = courseRepository;
     }
 
-    // Map requests to /courses
-    @GetMapping("/courses")
+    // 1. GET method
+    @GetMapping
     public List<Course> getAllCourses() {
         return courseRepository.findAll();
     }
 
+    // 2. POST method (Make sure this is OUTSIDE the method above!)
+    @PostMapping
+    @PreAuthorize("hasRole('CREATOR')")
+    public Course createCourse(@RequestBody Course course) {
+        return courseRepository.save(course);
+    }
 }
