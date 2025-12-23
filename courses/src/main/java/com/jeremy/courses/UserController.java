@@ -2,6 +2,8 @@ package com.jeremy.courses;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -62,5 +64,24 @@ public class UserController {
 
         // Return user without password
         return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+    }
+
+    // 6. Get current authenticated user
+    @GetMapping("/users/me")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
+
+        // Get email from authentication principal
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email);
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
+        }
+
+        // Return user without password
+        return ResponseEntity.ok(user);
     }
 }
