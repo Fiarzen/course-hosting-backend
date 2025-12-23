@@ -24,6 +24,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/courses", // Your Public Endpoint
+                                "/users/register", // Registration endpoint
                                 "/v3/api-docs", // Exact match for the JSON
                                 "/v3/api-docs/**", // Match for sub-groups (if you have them)
                                 "/swagger-ui/**", // The UI static resources (CSS/JS)
