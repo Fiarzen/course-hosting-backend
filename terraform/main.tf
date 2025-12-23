@@ -65,6 +65,36 @@ resource "aws_s3_bucket_cors_configuration" "lesson_files" {
 }
 
 # -----------------------------
+# S3 bucket for artifacts (Spring Boot JAR)
+# -----------------------------
+resource "aws_s3_bucket" "artifacts" {
+  bucket = var.artifact_bucket_name
+
+  tags = {
+    Project = "course-hosting-backend"
+    Env     = var.environment
+    Type    = "artifacts"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "artifacts" {
+  bucket = aws_s3_bucket.artifacts.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Upload the built JAR to the artifact bucket
+resource "aws_s3_object" "artifact_jar" {
+  bucket = aws_s3_bucket.artifacts.id
+  key    = var.artifact_key
+  source = var.artifact_source_path
+  etag   = filemd5(var.artifact_source_path)
+}
+
+# -----------------------------
 # Security groups
 # -----------------------------
 resource "aws_security_group" "app_sg" {
@@ -144,6 +174,51 @@ data "aws_subnets" "default" {
 }
 
 # -----------------------------
+# EC2 key pair for SSH access
+# -----------------------------
+resource "aws_key_pair" "app_key" {
+  key_name   = var.ssh_key_pair_name
+  public_key = file(var.ssh_public_key_path)
+}
+
+# -----------------------------
+# IAM role for EC2 to read artifact JAR from S3
+# -----------------------------
+resource "aws_iam_role" "app_role" {
+  name = "course-app-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "app_s3_artifact" {
+  name = "course-app-s3-artifact-policy"
+  role = aws_iam_role.app_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"],
+        Resource = ["${aws_s3_bucket.artifacts.arn}/${var.artifact_key}"]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_instance_profile" "app_profile" {
+  name = "course-app-instance-profile"
+  role = aws_iam_role.app_role.name
+}
+
+# -----------------------------
 # RDS PostgreSQL instance
 # -----------------------------
 resource "aws_db_subnet_group" "db_subnets" {
@@ -184,24 +259,38 @@ resource "aws_db_instance" "postgres" {
   }
 }
 
+data "aws_ami" "app_ami" { 
+  
+  most_recent = true 
+  owners = ["099720109477"]
+  filter { 
+    name = "name" 
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"] 
+  } 
+}
+
 # -----------------------------
 # EC2 instance for Spring Boot app
 # -----------------------------
 resource "aws_instance" "app" {
-  ami                    = var.app_ami_id
+  ami                    = data.aws_ami.app_ami.id
   instance_type          = var.app_instance_type
   subnet_id              = data.aws_subnets.default.ids[0]
   vpc_security_group_ids = [aws_security_group.app_sg.id]
 
   associate_public_ip_address = true
+  iam_instance_profile        = aws_iam_instance_profile.app_profile.name
+  key_name                    = aws_key_pair.app_key.key_name
 
   user_data = templatefile("${path.module}/user_data.sh.tpl", {
-    db_host         = aws_db_instance.postgres.address
-    db_port         = aws_db_instance.postgres.port
-    db_name         = var.db_name
-    db_username     = var.db_username
-    db_password     = var.db_password
-    s3_bucket_name  = aws_s3_bucket.lesson_files.bucket
+    db_host          = aws_db_instance.postgres.address
+    db_port          = aws_db_instance.postgres.port
+    db_name          = var.db_name
+    db_username      = var.db_username
+    db_password      = var.db_password
+    s3_bucket_name   = aws_s3_bucket.lesson_files.bucket
+    artifact_bucket  = aws_s3_bucket.artifacts.bucket
+    artifact_key     = var.artifact_key
   })
 
   tags = {

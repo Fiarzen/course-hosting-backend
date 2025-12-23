@@ -50,3 +50,33 @@ variable "app_instance_type" {
   type        = string
   default     = "t3.micro"
 }
+
+variable "ssh_public_key_path" {
+  description = "Path to local SSH public key to use for EC2"
+  type        = string
+  default     = "~/.ssh/id_ed25519.pub"
+}
+
+variable "ssh_key_pair_name" {
+  description = "Name for the EC2 key pair"
+  type        = string
+  default     = "course-hosting-key"
+}
+
+variable "artifact_bucket_name" {
+  description = "Name of S3 bucket that stores the built Spring Boot JAR"
+  type        = string
+  default     = "course-hosting-artifacts-dev"
+}
+
+variable "artifact_key" {
+  description = "Object key (path) of the Spring Boot JAR within the artifact bucket"
+  type        = string
+  default     = "courses.jar"
+}
+
+variable "artifact_source_path" {
+  description = "Local path to the built Spring Boot JAR to upload to S3"
+  type        = string
+  default     = "../courses/target/courses-0.0.1-SNAPSHOT.jar"
+}

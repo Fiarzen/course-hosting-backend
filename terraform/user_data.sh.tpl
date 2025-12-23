@@ -5,18 +5,18 @@ apt-get update -y || yum update -y || true
 
 # Install Java if needed (Ubuntu / Amazon Linux examples)
 if command -v apt-get >/dev/null 2>&1; then
-  apt-get install -y openjdk-17-jre-headless
+  apt-get install -y openjdk-17-jre-headless awscli
 elif command -v yum >/dev/null 2>&1; then
-  yum install -y java-17-amazon-corretto-headless || yum install -y java-17-openjdk
+  yum install -y java-17-amazon-corretto-headless awscli || yum install -y java-17-openjdk awscli
 fi
 
 # Create app directory
 mkdir -p /opt/course-app
 cd /opt/course-app
 
-# TODO: copy your built Spring Boot jar here (e.g. via AMI, S3, or user_data customization)
-# Example if jar is fetched from S3:
-# aws s3 cp s3://your-artifact-bucket/courses.jar /opt/course-app/app.jar
+# Download the Spring Boot JAR from S3 using the instance's IAM role
+aws s3 cp "s3://${artifact_bucket}/${artifact_key}" /opt/course-app/app.jar
+chmod 755 /opt/course-app/app.jar
 
 # Create systemd service file
 cat << 'EOF' > /etc/systemd/system/course-app.service
