@@ -12,9 +12,8 @@ public class Course {
 
     private String title;
 
-    // "Lob" stands for Large Object. It allows descriptions longer than 255
-    // characters.
-    @Lob
+    // Description can be long; use TEXT instead of Large Object to avoid PostgreSQL LOB issues
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     // --- RELATIONSHIP ---

@@ -12,12 +12,15 @@ public class Lesson {
 
     private String title;
 
-    @Lob // Allows long text for lesson notes
+    @Column(columnDefinition = "TEXT") // Allows long text for lesson notes without PostgreSQL Large Object API
     private String content;
 
     private String videoUrl; // Link to the video file (e.g., YouTube or S3)
 
     private String pdfUrl; // Link to the PDF resource
+
+    @Column(name = "order_index")
+    private Integer orderIndex; // Position of the lesson within its course
 
     // --- RELATIONSHIP ---
 
@@ -83,5 +86,13 @@ public class Lesson {
 
     public void setPdfUrl(String pdfUrl) {
         this.pdfUrl = pdfUrl;
+    }
+
+    public Integer getOrderIndex() {
+        return orderIndex;
+    }
+
+    public void setOrderIndex(Integer orderIndex) {
+        this.orderIndex = orderIndex;
     }
 }

@@ -7,4 +7,7 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     // Spring Data JPA magic: It looks for a "course" field in Lesson,
     // and an "id" field in Course.
     List<Lesson> findByCourseId(Long courseId);
+
+    // Ordered by explicit order index first, then by id as a stable fallback
+    List<Lesson> findByCourseIdOrderByOrderIndexAscIdAsc(Long courseId);
 }

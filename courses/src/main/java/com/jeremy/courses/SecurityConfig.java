@@ -23,14 +23,15 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/courses", // Your Public Endpoint
+                        .requestMatchers("/courses", // Public courses listing
                                 "/users/register", // Registration endpoint
+                                "/files/**", // Serve uploaded files (e.g., PDFs) without auth; access to URLs is controlled by lesson APIs
                                 "/v3/api-docs", // Exact match for the JSON
                                 "/v3/api-docs/**", // Match for sub-groups (if you have them)
                                 "/swagger-ui/**", // The UI static resources (CSS/JS)
                                 "/swagger-ui.html" // The UI index page
                         )
-                        .permitAll() // Keep the list public
+                        .permitAll() // Keep the listed endpoints public
                         .anyRequest().authenticated() // Everything else requires login
                 )
                 .httpBasic(withDefaults());
