@@ -37,5 +37,8 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
+# Local environment files
+.env
+
 # Plan files
 *.tfplan

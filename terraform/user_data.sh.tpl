@@ -31,6 +31,10 @@ Environment="DATABASE_URL=jdbc:postgresql://${db_host}:${db_port}/${db_name}"
 Environment="DATABASE_USERNAME=${db_username}"
 Environment="DATABASE_PASSWORD=${db_password}"
 Environment="S3_BUCKET_NAME=${s3_bucket_name}"
+Environment="APP_ADMIN_EMAIL=${app_admin_email}"
+Environment="APP_ADMIN_PASSWORD=${app_admin_password}"
+Environment="APP_STUDENT_EMAIL=${app_student_email}"
+Environment="APP_STUDENT_PASSWORD=${app_student_password}"
 ExecStart=/usr/bin/java -jar /opt/course-app/app.jar
 SuccessExitStatus=143
 Restart=always

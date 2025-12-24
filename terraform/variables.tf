@@ -80,3 +80,27 @@ variable "artifact_source_path" {
   type        = string
   default     = "../courses/target/courses-0.0.1-SNAPSHOT.jar"
 }
+
+variable "app_admin_email" {
+  description = "Seed admin email for the application"
+  type        = string
+  default     = "admin@example.com"
+}
+
+variable "app_admin_password" {
+  description = "Seed admin password for the application"
+  type        = string
+  sensitive   = true
+}
+
+variable "app_student_email" {
+  description = "Seed student email for the application"
+  type        = string
+  default     = "student@example.com"
+}
+
+variable "app_student_password" {
+  description = "Seed student password for the application"
+  type        = string
+  sensitive   = true
+}

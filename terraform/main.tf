@@ -94,6 +94,14 @@ resource "aws_s3_object" "artifact_jar" {
   etag   = filemd5(var.artifact_source_path)
 }
 
+# Convenience locals for user_data interpolation
+locals {
+  app_admin_email       = var.app_admin_email
+  app_admin_password    = var.app_admin_password
+  app_student_email     = var.app_student_email
+  app_student_password  = var.app_student_password
+}
+
 # -----------------------------
 # Security groups
 # -----------------------------
@@ -213,6 +221,26 @@ resource "aws_iam_role_policy" "app_s3_artifact" {
   })
 }
 
+resource "aws_iam_role_policy" "app_s3_lesson_files" {
+  name = "course-app-s3-lesson-files-policy"
+  role = aws_iam_role.app_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject"
+        ]
+        Resource = ["${aws_s3_bucket.lesson_files.arn}/*"]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "app_profile" {
   name = "course-app-instance-profile"
   role = aws_iam_role.app_role.name
@@ -283,14 +311,18 @@ resource "aws_instance" "app" {
   key_name                    = aws_key_pair.app_key.key_name
 
   user_data = templatefile("${path.module}/user_data.sh.tpl", {
-    db_host          = aws_db_instance.postgres.address
-    db_port          = aws_db_instance.postgres.port
-    db_name          = var.db_name
-    db_username      = var.db_username
-    db_password      = var.db_password
-    s3_bucket_name   = aws_s3_bucket.lesson_files.bucket
-    artifact_bucket  = aws_s3_bucket.artifacts.bucket
-    artifact_key     = var.artifact_key
+    artifact_bucket      = aws_s3_bucket.artifacts.bucket
+    artifact_key         = var.artifact_key
+    db_host              = aws_db_instance.postgres.address
+    db_port              = aws_db_instance.postgres.port
+    db_name              = var.db_name
+    db_username          = var.db_username
+    db_password          = var.db_password
+    s3_bucket_name       = aws_s3_bucket.lesson_files.bucket
+    app_admin_email      = local.app_admin_email
+    app_admin_password   = local.app_admin_password
+    app_student_email    = local.app_student_email
+    app_student_password = local.app_student_password
   })
 
   tags = {
