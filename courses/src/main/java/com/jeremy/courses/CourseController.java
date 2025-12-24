@@ -22,7 +22,7 @@ public class CourseController {
 
     // 2. POST method (Make sure this is OUTSIDE the method above!)
     @PostMapping
-    @PreAuthorize("hasRole('CREATOR')")
+    @PreAuthorize("hasRole('CREATOR') or hasRole('ADMIN')")
     public Course createCourse(@RequestBody Course course) {
         return courseRepository.save(course);
     }
