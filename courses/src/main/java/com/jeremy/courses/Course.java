@@ -1,6 +1,8 @@
 package com.jeremy.courses;
 
 import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "courses")
@@ -23,6 +25,14 @@ public class Course {
     @ManyToOne
     @JoinColumn(name = "author_id")
     private User author;
+
+    @Column(name = "restricted_to_allow_list", nullable = false)
+    private boolean restrictedToAllowList = false;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "course_allowed_emails", joinColumns = @JoinColumn(name = "course_id"))
+    @Column(name = "email", nullable = false)
+    private Set<String> allowedEmails = new HashSet<>();
 
     // --- CONSTRUCTORS ---
 
@@ -63,5 +73,30 @@ public class Course {
 
     public void setAuthor(User author) {
         this.author = author;
+    }
+
+    public boolean isRestrictedToAllowList() {
+        return restrictedToAllowList;
+    }
+
+    public void setRestrictedToAllowList(boolean restrictedToAllowList) {
+        this.restrictedToAllowList = restrictedToAllowList;
+    }
+
+    public Set<String> getAllowedEmails() {
+        return allowedEmails;
+    }
+
+    public void setAllowedEmails(Set<String> allowedEmails) {
+        this.allowedEmails = (allowedEmails != null) ? allowedEmails : new HashSet<>();
+    }
+
+    public boolean isEmailAllowed(String email) {
+        if (!restrictedToAllowList) {
+            // If not restricted, treat everyone as allowed via this helper
+            return true;
+        }
+        if (email == null) return false;
+        return allowedEmails != null && allowedEmails.contains(email.toLowerCase());
     }
 }

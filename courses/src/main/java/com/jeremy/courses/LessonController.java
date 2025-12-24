@@ -74,11 +74,24 @@ public class LessonController {
         return enrollmentRepository.existsByUserIdAndCourseId(user.getId(), courseId);
     }
 
+    private boolean isOnCourseAllowList(User user, Course course) {
+        if (user == null || course == null) return false;
+        if (!course.isRestrictedToAllowList()) return true;
+        return course.isEmailAllowed(user.getEmail());
+    }
+
     private boolean canViewFullLessonContent(User user, Course course) {
         if (user == null || course == null) {
             return false;
         }
-        return isAdmin(user) || isCourseAuthor(user, course) || isEnrolledInCourse(user, course.getId());
+        if (isAdmin(user) || isCourseAuthor(user, course)) {
+            return true;
+        }
+        // For restricted courses, user must be on allowlist and enrolled
+        if (!isOnCourseAllowList(user, course)) {
+            return false;
+        }
+        return isEnrolledInCourse(user, course.getId());
     }
 
     @GetMapping

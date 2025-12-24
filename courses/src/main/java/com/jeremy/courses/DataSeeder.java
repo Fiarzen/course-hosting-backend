@@ -1,5 +1,6 @@
 package com.jeremy.courses;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,18 @@ public class DataSeeder implements CommandLineRunner {
     private final CourseRepository courseRepository;
     private final LessonRepository lessonRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${APP_ADMIN_EMAIL:admin@example.com}")
+    private String adminEmail;
+
+    @Value("${APP_ADMIN_PASSWORD:pass123}")
+    private String adminPassword;
+
+    @Value("${APP_STUDENT_EMAIL:student@example.com}")
+    private String studentEmail;
+
+    @Value("${APP_STUDENT_PASSWORD:pass321}")
+    private String studentPassword;
 
     // 2. Inject it in the constructor
     public DataSeeder(UserRepository u, CourseRepository c, LessonRepository l, PasswordEncoder pe) {
@@ -26,10 +39,11 @@ public class DataSeeder implements CommandLineRunner {
         if (userRepository.count() == 0) {
             System.out.println("🌱 Seeding database...");
 
-            User admin = new User("admin@example.com", passwordEncoder.encode("pass123"), "ADMIN");
+            // Use environment-configured credentials for demo admin & student accounts
+            User admin = new User(adminEmail, passwordEncoder.encode(adminPassword), "ADMIN");
             admin.setName("Admin User");
 
-            User student = new User("student@example.com", passwordEncoder.encode("pass321"), "STUDENT");
+            User student = new User(studentEmail, passwordEncoder.encode(studentPassword), "STUDENT");
             student.setName("Jeremy Student");
 
             userRepository.saveAll(List.of(admin, student));

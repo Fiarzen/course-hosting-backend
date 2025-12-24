@@ -49,6 +49,13 @@ public class EnrollmentController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Course not found"));
         }
 
+        boolean isAdmin = "ADMIN".equals(user.getRole());
+        boolean isAuthor = course.getAuthor() != null && course.getAuthor().getId().equals(user.getId());
+        if (course.isRestrictedToAllowList() && !isAdmin && !isAuthor && !course.isEmailAllowed(user.getEmail())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Enrollment restricted: you are not on this course's allowlist"));
+        }
+
         // Check if already enrolled
         if (enrollmentRepository.existsByUserIdAndCourseId(user.getId(), courseId)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Already enrolled in this course"));
@@ -148,11 +155,13 @@ public class EnrollmentController {
         List<Map<String, Object>> lessonProgress = lessons.stream().map(lesson -> {
             LessonProgress progress = progressRepository.findByUserIdAndLessonId(user.getId(), lesson.getId())
                     .orElse(new LessonProgress(user, lesson));
-            return Map.of(
-                    "lesson", lesson,
-                    "completed", progress.isCompleted(),
-                    "completedAt", progress.getCompletedAt() != null ? progress.getCompletedAt().toString() : null
-            );
+
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("lesson", lesson);
+            map.put("completed", progress.isCompleted());
+            // Allow completedAt to be null in the JSON payload without causing Map.of NPE
+            map.put("completedAt", progress.getCompletedAt() != null ? progress.getCompletedAt().toString() : null);
+            return map;
         }).collect(Collectors.toList());
 
         long completedCount = lessonProgress.stream().filter(p -> (Boolean) p.get("completed")).count();
