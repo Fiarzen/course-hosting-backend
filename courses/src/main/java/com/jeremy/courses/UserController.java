@@ -5,7 +5,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController // 1. Tells Spring this class handles web requests
 public class UserController {
@@ -67,14 +70,13 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
     }
 
-    // 6. Get current authenticated user
+    // 6. Get current authenticated user (based on Bearer token)
     @GetMapping("/users/me")
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
         }
 
-        // Get email from authentication principal
         String email = authentication.getName();
         User user = userRepository.findByEmail(email);
 
@@ -82,7 +84,6 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
         }
 
-        // Return user without password
         return ResponseEntity.ok(user);
     }
 
@@ -116,6 +117,44 @@ public class UserController {
         return ResponseEntity.ok(Map.of(
                 "message", "User successfully upgraded to CREATOR",
                 "user", updatedUser
+        ));
+    }
+
+    // 8. Admin endpoint to generate a password reset link for a user
+    @PostMapping("/users/{userId}/reset-password")
+    public ResponseEntity<?> createPasswordResetToken(@PathVariable Long userId, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
+
+        // Check if requester is ADMIN
+        String email = authentication.getName();
+        User admin = userRepository.findByEmail(email);
+        if (admin == null || !"ADMIN".equals(admin.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Only admins can reset passwords"));
+        }
+
+        // Find the user to reset
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
+        }
+
+        // Generate a one-time token valid for 1 hour
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiresAt = LocalDateTime.now().plusHours(1);
+
+        user.setPasswordResetToken(token);
+        user.setPasswordResetTokenExpiry(expiresAt);
+        userRepository.save(user);
+
+        // Frontend will build the full URL using window.location.origin
+        String resetPath = "/reset-password?token=" + token;
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Password reset link generated",
+                "resetToken", token,
+                "resetPath", resetPath
         ));
     }
 }

@@ -3,6 +3,8 @@ package com.jeremy.courses;
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "users")
 public class User {
@@ -18,6 +20,17 @@ public class User {
     @JsonIgnore
     private String password;
     private String role;
+
+    // Opaque auth token for API authentication (Bearer token)
+    @JsonIgnore
+    private String authToken;
+
+    // Password reset token and expiry for admin-initiated resets
+    @JsonIgnore
+    private String passwordResetToken;
+
+    @JsonIgnore
+    private LocalDateTime passwordResetTokenExpiry;
 
     // --- CONSTRUCTORS ---
 
@@ -77,5 +90,29 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getAuthToken() {
+        return authToken;
+    }
+
+    public void setAuthToken(String authToken) {
+        this.authToken = authToken;
+    }
+
+    public String getPasswordResetToken() {
+        return passwordResetToken;
+    }
+
+    public void setPasswordResetToken(String passwordResetToken) {
+        this.passwordResetToken = passwordResetToken;
+    }
+
+    public LocalDateTime getPasswordResetTokenExpiry() {
+        return passwordResetTokenExpiry;
+    }
+
+    public void setPasswordResetTokenExpiry(LocalDateTime passwordResetTokenExpiry) {
+        this.passwordResetTokenExpiry = passwordResetTokenExpiry;
     }
 }
