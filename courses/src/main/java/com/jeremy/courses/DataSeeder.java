@@ -26,7 +26,7 @@ public class DataSeeder implements CommandLineRunner {
         if (userRepository.count() == 0) {
             System.out.println("🌱 Seeding database...");
 
-            User admin = new User("admin@example.com", passwordEncoder.encode("pass123"), "CREATOR");
+            User admin = new User("admin@example.com", passwordEncoder.encode("pass123"), "ADMIN");
             admin.setName("Admin User");
 
             User student = new User("student@example.com", passwordEncoder.encode("pass321"), "STUDENT");
