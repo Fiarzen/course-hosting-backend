@@ -1,6 +1,6 @@
 output "app_public_ip" {
-  description = "Public IP of the application EC2 instance"
-  value       = aws_instance.app.public_ip
+  description = "Elastic public IP of the application EC2 instance"
+  value       = aws_eip.app_eip.public_ip
 }
 
 output "rds_endpoint" {

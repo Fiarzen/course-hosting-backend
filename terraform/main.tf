@@ -86,6 +86,7 @@ resource "aws_s3_bucket_public_access_block" "artifacts" {
   restrict_public_buckets = true
 }
 
+
 # Upload the built JAR to the artifact bucket
 resource "aws_s3_object" "artifact_jar" {
   bucket = aws_s3_bucket.artifacts.id
@@ -327,6 +328,20 @@ resource "aws_instance" "app" {
 
   tags = {
     Name    = "course-app-server"
+    Project = "course-hosting-backend"
+    Env     = var.environment
+  }
+}
+
+# -----------------------------
+# Elastic IP for the app instance (stable public IP)
+# -----------------------------
+resource "aws_eip" "app_eip" {
+  domain   = "vpc"
+  instance = aws_instance.app.id
+
+  tags = {
+    Name    = "course-app-eip"
     Project = "course-hosting-backend"
     Env     = var.environment
   }
