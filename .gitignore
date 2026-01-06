@@ -42,3 +42,5 @@ override.tf.json
 
 # Plan files
 *.tfplan
+
+export_aws_credentials.sh
