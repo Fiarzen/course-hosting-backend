@@ -21,9 +21,9 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins(
-                        "https://bright-conkies-b2d0c9.netlify.app", // Deployed frontend
-                        "http://localhost:3000",                    // Local dev (Vite)
-                        "http://127.0.0.1:3000"                     // Local dev (loopback)
+                        "https://mind-leaf.netlify.app", // Deployed frontend
+                        "http://localhost:3000", // Local dev (Vite)
+                        "http://127.0.0.1:3000" // Local dev (loopback)
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("Authorization", "Content-Type")
