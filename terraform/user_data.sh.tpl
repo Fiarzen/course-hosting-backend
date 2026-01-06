@@ -1,51 +1,63 @@
 #!/bin/bash
+set -e
 
-# Basic updates
-apt-get update -y || yum update -y || true
-
-# Install Java if needed (Ubuntu / Amazon Linux examples)
+###################################
+# OS Updates & Dependencies
+###################################
 if command -v apt-get >/dev/null 2>&1; then
+  apt-get update -y
   apt-get install -y openjdk-17-jre-headless awscli
 elif command -v yum >/dev/null 2>&1; then
-  yum install -y java-17-amazon-corretto-headless awscli || yum install -y java-17-openjdk awscli
+  yum update -y
+  yum install -y java-17-amazon-corretto-headless awscli \
+    || yum install -y java-17-openjdk awscli
 fi
 
-# Create app directory
+###################################
+# Application Directory
+###################################
 mkdir -p /opt/course-app
-cd /opt/course-app
+chown root:root /opt/course-app
+chmod 755 /opt/course-app
 
-# Download the Spring Boot JAR from S3 using the instance's IAM role
-aws s3 cp "s3://${artifact_bucket}/${artifact_key}" /opt/course-app/app.jar
-chmod 755 /opt/course-app/app.jar
-
-# Create systemd service file
-cat << 'EOF' > /etc/systemd/system/course-app.service
+###################################
+# systemd Service
+###################################
+cat << EOF > /etc/systemd/system/course-app.service
 [Unit]
 Description=Course Hosting Spring Boot Application
 After=network.target
 
 [Service]
+Type=simple
 User=root
 WorkingDirectory=/opt/course-app
+
+# --- Environment Variables ---
 Environment="DATABASE_URL=jdbc:postgresql://${db_host}:${db_port}/${db_name}"
 Environment="DATABASE_USERNAME=${db_username}"
 Environment="DATABASE_PASSWORD=${db_password}"
-Environment="AWS_S3_ENABLED=true"
-Environment="AWS_S3_BUCKET_NAME=${s3_bucket_name}"
+Environment="S3_BUCKET_NAME=${s3_bucket_name}"
 Environment="APP_ADMIN_EMAIL=${app_admin_email}"
 Environment="APP_ADMIN_PASSWORD=${app_admin_password}"
 Environment="APP_STUDENT_EMAIL=${app_student_email}"
 Environment="APP_STUDENT_PASSWORD=${app_student_password}"
+
+# --- Always pull latest JAR before start ---
+ExecStartPre=/usr/bin/aws s3 cp s3://${artifact_bucket}/${artifact_key} /opt/course-app/app.jar
 ExecStart=/usr/bin/java -jar /opt/course-app/app.jar
-SuccessExitStatus=143
+
 Restart=always
 RestartSec=10
+SuccessExitStatus=143
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Reload systemd and start service
+###################################
+# Start Service
+###################################
 systemctl daemon-reload
-systemctl enable course-app.service
-systemctl start course-app.service
+systemctl enable course-app
+systemctl start course-app
