@@ -26,7 +26,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://127.0.0.1:3000" // Local dev (loopback)
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("Authorization", "Content-Type")
+                // Allow all headers so preflight doesn't fail when browser adds extra ones
+                .allowedHeaders("*")
                 .allowCredentials(true);
     }
 }
