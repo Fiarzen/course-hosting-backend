@@ -100,6 +100,39 @@ public class EnrollmentController {
         return ResponseEntity.ok(coursesWithProgress);
     }
 
+    // Unenroll from a course
+    @DeleteMapping("/courses/{courseId}")
+    public ResponseEntity<?> unenrollFromCourse(@PathVariable Long courseId, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+        }
+
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
+        }
+
+        Course course = courseRepository.findById(courseId).orElse(null);
+        if (course == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Course not found"));
+        }
+
+        var enrollmentOpt = enrollmentRepository.findByUserIdAndCourseId(user.getId(), courseId);
+        if (enrollmentOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "You are not enrolled in this course"));
+        }
+
+        // Delete lesson progress for this user+course
+        List<LessonProgress> progressEntries = progressRepository.findByUserIdAndLessonCourseId(user.getId(), courseId);
+        progressRepository.deleteAll(progressEntries);
+
+        // Delete enrollment
+        enrollmentRepository.delete(enrollmentOpt.get());
+
+        return ResponseEntity.ok(Map.of("message", "Unenrolled from course"));
+    }
+
     // Mark lesson as completed
     @PostMapping("/lessons/{lessonId}/complete")
     public ResponseEntity<?> completeLesson(@PathVariable Long lessonId, Authentication authentication) {
