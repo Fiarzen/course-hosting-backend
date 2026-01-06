@@ -16,10 +16,20 @@ public class CourseController {
 
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
+    private final LessonRepository lessonRepository;
+    private final LessonProgressRepository lessonProgressRepository;
+    private final CourseEnrollmentRepository courseEnrollmentRepository;
 
-    public CourseController(CourseRepository courseRepository, UserRepository userRepository) {
+    public CourseController(CourseRepository courseRepository,
+                            UserRepository userRepository,
+                            LessonRepository lessonRepository,
+                            LessonProgressRepository lessonProgressRepository,
+                            CourseEnrollmentRepository courseEnrollmentRepository) {
         this.courseRepository = courseRepository;
         this.userRepository = userRepository;
+        this.lessonRepository = lessonRepository;
+        this.lessonProgressRepository = lessonProgressRepository;
+        this.courseEnrollmentRepository = courseEnrollmentRepository;
     }
 
     private User getCurrentUser(Authentication authentication) {
@@ -152,5 +162,42 @@ public class CourseController {
                 "restrictedToAllowList", course.isRestrictedToAllowList(),
                 "allowedEmails", course.getAllowedEmails()
         ));
+    }
+
+    // 4. Delete a course (creator can delete their own courses, admin can delete any)
+    @PreAuthorize("hasRole('CREATOR') or hasRole('ADMIN')")
+    @DeleteMapping("/{courseId}")
+    public ResponseEntity<?> deleteCourse(@PathVariable Long courseId, Authentication authentication) {
+        User user = getCurrentUser(authentication);
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Not authenticated"));
+        }
+
+        Course course = courseRepository.findById(courseId).orElse(null);
+        if (course == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "Course not found"));
+        }
+
+        if (!isAdmin(user) && !isCourseAuthor(user, course)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Not allowed to delete this course"));
+        }
+
+        // Clean up related data: lesson progress, lessons, enrollments, then course
+        List<Lesson> lessons = lessonRepository.findByCourseId(courseId);
+        for (Lesson lesson : lessons) {
+            lessonProgressRepository.deleteByLessonId(lesson.getId());
+        }
+        lessonRepository.deleteAll(lessons);
+
+        // Remove enrollments for this course
+        courseEnrollmentRepository.deleteAll(
+                courseEnrollmentRepository.findAll().stream()
+                        .filter(e -> e.getCourse().getId().equals(courseId))
+                        .toList()
+        );
+
+        courseRepository.delete(course);
+
+        return ResponseEntity.ok(Map.of("message", "Course deleted"));
     }
 }
